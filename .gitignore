@@ -1,0 +1,33 @@
+# macOS and editor files
+.DS_Store
+**/.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Local logs and temporary files
+*.log
+*.tmp
+*.cache
+
+# Environment and machine-specific configuration
+.env
+.env.*
+!.env.example
+config.local.php
+config/private.php
+
+# Credentials and private project notes
+**/01 LOGIN DETAILS & PROJECT INFO.txt
+*LOGIN DETAILS*
+
+# Database exports may contain credentials and patient information
+DATABASE FILE/
+*.sql
+!database/schema.example.sql
+
+# OS/web-server local files
+.htaccess.local
+
+# Empty local placeholder; the application does not use Composer
+composer.json
