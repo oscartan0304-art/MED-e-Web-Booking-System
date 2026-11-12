@@ -1,3 +1,7 @@
+<?php
+require_once __DIR__ . '/auth.php';
+med_e_require_role('doctor');
+?>
 <!DOCTYPE html>
 <?php 
 include('func1.php');
@@ -5,7 +9,10 @@ $con=mysqli_connect("localhost","root","","hospitalms");
 $doctor = $_SESSION['dname'];
 if(isset($_GET['cancel']))
   {
-    $query=mysqli_query($con,"update appointmenttb set doctorStatus='0' where ID = '".$_GET['ID']."'");
+    $appointmentId=(int)($_GET['ID'] ?? 0);
+    $stmt=mysqli_prepare($con,"update appointmenttb set doctorStatus=0 where ID=? and doctor=?");
+    mysqli_stmt_bind_param($stmt,"is",$appointmentId,$doctor);
+    $query=mysqli_stmt_execute($stmt);
     if($query)
     {
       echo "<script>alert('Your appointment successfully cancelled');</script>";
@@ -185,19 +192,21 @@ if(isset($_GET['cancel']))
                     $con=mysqli_connect("localhost","root","","hospitalms");
                     global $con;
                     $dname = $_SESSION['dname'];
-                    $query = "select pid,ID,fname,lname,gender,email,contact,appdate,apptime,userStatus,doctorStatus from appointmenttb where doctor='$dname';";
-                    $result = mysqli_query($con,$query);
+                    $stmt = mysqli_prepare($con,"select pid,ID,fname,lname,gender,email,contact,appdate,apptime,userStatus,doctorStatus from appointmenttb where doctor=?");
+                    mysqli_stmt_bind_param($stmt,"s",$dname);
+                    mysqli_stmt_execute($stmt);
+                    $result = mysqli_stmt_get_result($stmt);
                     $cnt=1;
                     while ($row = mysqli_fetch_array($result)){
                       ?>
                       <tr>
                       <td><?php echo $cnt;?></td>
-                        <td><?php echo $row['fname'];?> <?php echo $row['lname'];?></td>
-                        <td><?php echo $row['gender'];?></td>
-                        <td><?php echo $row['email'];?></td>
-                        <td><?php echo $row['contact'];?></td>
-                        <td><?php echo $row['appdate'];?></td>
-                        <td><?php echo $row['apptime'];?></td>
+                        <td><?php echo med_e_escape($row['fname']);?> <?php echo med_e_escape($row['lname']);?></td>
+                        <td><?php echo med_e_escape($row['gender']);?></td>
+                        <td><?php echo med_e_escape($row['email']);?></td>
+                        <td><?php echo med_e_escape($row['contact']);?></td>
+                        <td><?php echo med_e_escape($row['appdate']);?></td>
+                        <td><?php echo med_e_escape($row['apptime']);?></td>
                         <td>
                     <?php if(($row['userStatus']==1) && ($row['doctorStatus']==1))  
                     {
@@ -219,7 +228,7 @@ if(isset($_GET['cancel']))
                         { ?>
 
 													
-	                        <a href="doctor-panel.php?ID=<?php echo $row['ID']?>&cancel=update" 
+	                        <a href="doctor-panel.php?ID=<?php echo (int)$row['ID']?>&cancel=update" 
                               onClick="return confirm('Are you sure you want to cancel this appointment ?')"
                               title="Cancel Appointment" tooltip-placement="top" tooltip="Remove"><button class="btn btn-danger">Cancel</button></a>
 	                        <?php } else {
@@ -234,7 +243,7 @@ if(isset($_GET['cancel']))
                         <?php if(($row['userStatus']==1) && ($row['doctorStatus']==1))  
                         { ?>
 
-                        <a href="prescribe.php?pid=<?php echo $row['pid']?>&ID=<?php echo $row['ID']?>&fname=<?php echo $row['fname']?>&lname=<?php echo $row['lname']?>&appdate=<?php echo $row['appdate']?>&apptime=<?php echo $row['apptime']?>"
+                        <a href="prescribe.php?pid=<?php echo (int)$row['pid']?>&ID=<?php echo (int)$row['ID']?>&fname=<?php echo urlencode($row['fname'])?>&lname=<?php echo urlencode($row['lname'])?>&appdate=<?php echo urlencode($row['appdate'])?>&apptime=<?php echo urlencode($row['apptime'])?>"
                         tooltip-placement="top" tooltip="Remove" title="prescribe">
                         <button class="btn btn-success">Prescribe</button></a>
                         <?php } else {
@@ -274,9 +283,10 @@ if(isset($_GET['cancel']))
                     $con=mysqli_connect("localhost","root","","hospitalms");
                     global $con;
 
-                    $query = "select pid,fname,lname,ID,appdate,apptime,disease,allergy,prescription from prestb where doctor='$doctor';";
-                    
-                    $result = mysqli_query($con,$query);
+                    $stmt = mysqli_prepare($con,"select pid,fname,lname,ID,appdate,apptime,disease,allergy,prescription from prestb where doctor=?");
+                    mysqli_stmt_bind_param($stmt,"s",$doctor);
+                    mysqli_stmt_execute($stmt);
+                    $result = mysqli_stmt_get_result($stmt);
                     if(!$result){
                       echo mysqli_error($con);
                     }
@@ -286,12 +296,12 @@ if(isset($_GET['cancel']))
                   ?>
                       <tr>
                         <td><?php echo $cnt;?></td>
-                        <td><?php echo $row['fname'];?> <?php echo $row['lname'];?></td>                        
-                        <td><?php echo $row['appdate'];?></td>
-                        <td><?php echo $row['apptime'];?></td>
-                        <td><?php echo $row['disease'];?></td>
-                        <td><?php echo $row['allergy'];?></td>
-                        <td><?php echo $row['prescription'];?></td>
+                        <td><?php echo med_e_escape($row['fname']);?> <?php echo med_e_escape($row['lname']);?></td>                        
+                        <td><?php echo med_e_escape($row['appdate']);?></td>
+                        <td><?php echo med_e_escape($row['apptime']);?></td>
+                        <td><?php echo med_e_escape($row['disease']);?></td>
+                        <td><?php echo med_e_escape($row['allergy']);?></td>
+                        <td><?php echo med_e_escape($row['prescription']);?></td>
                     
                       </tr>
                     <?php $cnt++; }
@@ -334,14 +344,14 @@ if(isset($_GET['cancel']))
                       #$contact = $row['contact'];
                   ?>
                       <tr>
-                        <td><?php echo $row['fname'];?></td>
-                        <td><?php echo $row['lname'];?></td>
-                        <td><?php echo $row['email'];?></td>
-                        <td><?php echo $row['contact'];?></td>
-                        <td><?php echo $row['doctor'];?></td>
-                        <td><?php echo $row['docFees'];?></td>
-                        <td><?php echo $row['appdate'];?></td>
-                        <td><?php echo $row['apptime'];?></td>
+                        <td><?php echo med_e_escape($row['fname']);?></td>
+                        <td><?php echo med_e_escape($row['lname']);?></td>
+                        <td><?php echo med_e_escape($row['email']);?></td>
+                        <td><?php echo med_e_escape($row['contact']);?></td>
+                        <td><?php echo med_e_escape($row['doctor']);?></td>
+                        <td><?php echo med_e_escape($row['docFees']);?></td>
+                        <td><?php echo med_e_escape($row['appdate']);?></td>
+                        <td><?php echo med_e_escape($row['apptime']);?></td>
                       </tr>
                     <?php } ?>
                 </tbody>

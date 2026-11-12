@@ -1,3 +1,7 @@
+<?php
+require_once __DIR__ . '/auth.php';
+med_e_require_role('patient');
+?>
 <!DOCTYPE html>
 <?php 
 include('func.php');  
@@ -39,10 +43,15 @@ if(isset($_POST['app-submit']))
 	
   if(date("Y-m-d",$appdate1)>=$cur_date){
     if((date("Y-m-d",$appdate1)==$cur_date and date("H:i:s",$apptime1)>$cur_time) or date("Y-m-d",$appdate1)>$cur_date) {
-      $check_query = mysqli_query($con,"select apptime from appointmenttb where doctor='$doctor' and appdate='$appdate' and apptime='$apptime'");
+      $check_stmt = mysqli_prepare($con,"select apptime from appointmenttb where doctor=? and appdate=? and apptime=?");
+      mysqli_stmt_bind_param($check_stmt,"sss",$doctor,$appdate,$apptime);
+      mysqli_stmt_execute($check_stmt);
+      $check_query = mysqli_stmt_get_result($check_stmt);
 
         if(mysqli_num_rows($check_query)==0){
-          $query=mysqli_query($con,"insert into appointmenttb(pid,fname,lname,gender,email,contact,doctor,docFees,appdate,apptime,userStatus,doctorStatus) values($pid,'$fname','$lname','$gender','$email','$contact','$doctor','$docFees','$appdate','$apptime','1','1')");
+          $book_stmt=mysqli_prepare($con,"insert into appointmenttb(pid,fname,lname,gender,email,contact,doctor,docFees,appdate,apptime,userStatus,doctorStatus) values(?,?,?,?,?,?,?,?,?,?,1,1)");
+          mysqli_stmt_bind_param($book_stmt,"issssssiss",$pid,$fname,$lname,$gender,$email,$contact,$doctor,$docFees,$appdate,$apptime);
+          $query=mysqli_stmt_execute($book_stmt);
 
           if($query)
           {
@@ -68,7 +77,10 @@ if(isset($_POST['app-submit']))
 
 if(isset($_GET['cancel']))
   {
-    $query=mysqli_query($con,"update appointmenttb set userStatus='0' where ID = '".$_GET['ID']."'");
+    $appointmentId=(int)($_GET['ID'] ?? 0);
+    $stmt=mysqli_prepare($con,"update appointmenttb set userStatus=0 where ID=? and pid=?");
+    mysqli_stmt_bind_param($stmt,"ii",$appointmentId,$pid);
+    $query=mysqli_stmt_execute($stmt);
     if($query)
     {
       echo "<script>alert('Your appointment successfully cancelled');</script>";
@@ -82,19 +94,23 @@ if(isset($_GET['cancel']))
 function generate_bill(){
   $con=mysqli_connect("localhost","root","","hospitalms");
   $pid = $_SESSION['pid'];
+  $appointmentId = (int)($_GET['ID'] ?? 0);
   $output='';
-  $query=mysqli_query($con,"select p.pid,p.ID,p.fname,p.lname,p.doctor,p.appdate,p.apptime,p.disease,p.allergy,p.prescription,a.docFees from prestb p inner join appointmenttb a on p.ID=a.ID and p.pid = '$pid' and p.ID = '".$_GET['ID']."'");
+  $stmt=mysqli_prepare($con,"select p.pid,p.ID,p.fname,p.lname,p.doctor,p.appdate,p.apptime,p.disease,p.allergy,p.prescription,a.docFees from prestb p inner join appointmenttb a on p.ID=a.ID where p.pid=? and p.ID=?");
+  mysqli_stmt_bind_param($stmt,"ii",$pid,$appointmentId);
+  mysqli_stmt_execute($stmt);
+  $query=mysqli_stmt_get_result($stmt);
   while($row = mysqli_fetch_array($query)){
     $output .= '
-    <label> Bill No : </label>HMS_'.$row["pid"].$row["ID"].'<br/><br/>
-    <label> Patient : </label>'.$row["fname"].' '.$row["lname"].'<br/><br/>
-    <label> Doctor : </label>'.$row["doctor"].'<br/><br/>
-    <label> Appointment Date : </label>'.$row["appdate"].'<br/><br/>
-    <label> Appointment Time : </label>'.$row["apptime"].'<br/><br/>
-    <label> Disease : </label>'.$row["disease"].'<br/><br/>
-    <label> Allergies : </label>'.$row["allergy"].'<br/><br/>
-    <label> Prescription : </label>'.$row["prescription"].'<br/><br/>
-    <label> Fees Paid : </label>$'.$row["docFees"].'<br/>
+    <label> Bill No : </label>HMS_'.(int)$row["pid"].(int)$row["ID"].'<br/><br/>
+    <label> Patient : </label>'.med_e_escape($row["fname"]).' '.med_e_escape($row["lname"]).'<br/><br/>
+    <label> Doctor : </label>'.med_e_escape($row["doctor"]).'<br/><br/>
+    <label> Appointment Date : </label>'.med_e_escape($row["appdate"]).'<br/><br/>
+    <label> Appointment Time : </label>'.med_e_escape($row["apptime"]).'<br/><br/>
+    <label> Disease : </label>'.med_e_escape($row["disease"]).'<br/><br/>
+    <label> Allergies : </label>'.med_e_escape($row["allergy"]).'<br/><br/>
+    <label> Prescription : </label>'.med_e_escape($row["prescription"]).'<br/><br/>
+    <label> Fees Paid : </label>$'.med_e_escape($row["docFees"]).'<br/>
     
     ';
 
@@ -468,8 +484,10 @@ function get_specs(){
                     $con=mysqli_connect("localhost","root","","hospitalms");
                     global $con;
 
-                    $query = "select ID,doctor,docFees,appdate,apptime,userStatus,doctorStatus from appointmenttb where fname ='$fname' and lname='$lname';";
-                    $result = mysqli_query($con,$query);
+                    $stmt = mysqli_prepare($con,"select ID,doctor,docFees,appdate,apptime,userStatus,doctorStatus from appointmenttb where pid=?");
+                    mysqli_stmt_bind_param($stmt,"i",$pid);
+                    mysqli_stmt_execute($stmt);
+                    $result = mysqli_stmt_get_result($stmt);
                     $cnt=1;
                     while ($row = mysqli_fetch_array($result)){
               
@@ -480,10 +498,10 @@ function get_specs(){
                   ?>
                       <tr>
                         <td><?php echo $cnt;?></td>
-                        <td><?php echo $row['doctor'];?></td>
+                        <td><?php echo med_e_escape($row['doctor']);?></td>
                         <td><?php echo '$'.$row['docFees'];?></td>
-                        <td><?php echo $row['appdate'];?></td>
-                        <td><?php echo $row['apptime'];?></td>
+                        <td><?php echo med_e_escape($row['appdate']);?></td>
+                        <td><?php echo med_e_escape($row['apptime']);?></td>
                         
                           <td>
                     <?php if(($row['userStatus']==1) && ($row['doctorStatus']==1))  
@@ -506,7 +524,7 @@ function get_specs(){
                         { ?>
 
 													
-	                        <a href="admin-panel.php?ID=<?php echo $row['ID']?>&cancel=update" 
+	                        <a href="admin-panel.php?ID=<?php echo (int)$row['ID']?>&cancel=update" 
                               onClick="return confirm('Are you sure you want to cancel this appointment ?')"
                               title="Cancel Appointment" tooltip-placement="top" tooltip="Remove"><button class="btn btn-danger">Cancel</button></a>
 	                        <?php } else {
@@ -545,9 +563,10 @@ function get_specs(){
                     $con=mysqli_connect("localhost","root","","hospitalms");
                     global $con;
 
-                    $query = "select doctor,ID,appdate,apptime,disease,allergy,prescription from prestb where pid='$pid';";
-                    
-                    $result = mysqli_query($con,$query);
+                    $stmt = mysqli_prepare($con,"select doctor,ID,appdate,apptime,disease,allergy,prescription from prestb where pid=?");
+                    mysqli_stmt_bind_param($stmt,"i",$pid);
+                    mysqli_stmt_execute($stmt);
+                    $result = mysqli_stmt_get_result($stmt);
                     if(!$result){
                       echo mysqli_error($con);
                     }
@@ -556,12 +575,12 @@ function get_specs(){
                     while ($row = mysqli_fetch_array($result)){
                   ?>
                       <tr>
-                        <td><?php echo $row['doctor'];?></td>
-                        <td><?php echo $row['appdate'];?></td>
-                        <td><?php echo $row['apptime'];?></td>
-                        <td><?php echo $row['disease'];?></td>
-                        <td><?php echo $row['allergy'];?></td>
-                        <td><?php echo $row['prescription'];?></td>
+                        <td><?php echo med_e_escape($row['doctor']);?></td>
+                        <td><?php echo med_e_escape($row['appdate']);?></td>
+                        <td><?php echo med_e_escape($row['apptime']);?></td>
+                        <td><?php echo med_e_escape($row['disease']);?></td>
+                        <td><?php echo med_e_escape($row['allergy']);?></td>
+                        <td><?php echo med_e_escape($row['prescription']);?></td>
                         <td>
                           <form method="get">
                           <!-- <a href="admin-panel.php?ID=" 
@@ -569,8 +588,8 @@ function get_specs(){
                               title="Pay Bill" tooltip-placement="top" tooltip="Remove"><button class="btn btn-success">Pay</button>
                               </a></td> -->
 
-                              <a href="admin-panel.php?ID=<?php echo $row['ID']?>">
-                              <input type ="hidden" name="ID" value="<?php echo $row['ID']?>"/>
+                              <a href="admin-panel.php?ID=<?php echo (int)$row['ID']?>">
+                              <input type ="hidden" name="ID" value="<?php echo (int)$row['ID']?>"/>
                               <input type = "submit" onclick="alert('Bill Paid Successfully');" name ="generate_bill" class = "btn btn-success" value="Pay Bill"/>
                               </a>
                               </td>

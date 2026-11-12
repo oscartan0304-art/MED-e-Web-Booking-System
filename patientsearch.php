@@ -1,3 +1,7 @@
+<?php
+require_once __DIR__ . '/auth.php';
+med_e_require_role('admin');
+?>
 <!DOCTYPE html>
  <?php #include("func.php");?>
 <html>
@@ -12,10 +16,12 @@ include("newfunc.php");
 if(isset($_POST['patient_search_submit']))
 {
 	$contact=$_POST['patient_contact'];
-	$query = "select * from patreg where contact= '$contact'";
-  $result = mysqli_query($con,$query);
+	$stmt = mysqli_prepare($con,"select * from patreg where contact=?");
+  mysqli_stmt_bind_param($stmt,"s",$contact);
+  mysqli_stmt_execute($stmt);
+  $result = mysqli_stmt_get_result($stmt);
   $row=mysqli_fetch_array($result);
-  if($row['lname']=="" & $row['email']=="" & $row['contact']=="" & $row['password']==""){
+  if(!$row){
     echo "<script> alert('No entries found! Please enter valid details'); 
           window.location.href = 'admin-panel1.php#list-pat';</script>";
   }
@@ -30,23 +36,20 @@ if(isset($_POST['patient_search_submit']))
       <th scope='col'>Last Name</th>
       <th scope='col'>Email</th>
       <th scope='col'>Contact</th>
-      <th scope='col'>Password</th>
     </tr>
   </thead>
   <tbody>";
 
 	
-		    $fname = $row['fname'];
-        $lname = $row['lname'];
-        $email = $row['email'];
-        $contact = $row['contact'];
-        $password = $row['password'];
+		    $fname = med_e_escape($row['fname']);
+        $lname = med_e_escape($row['lname']);
+        $email = med_e_escape($row['email']);
+        $contact = med_e_escape($row['contact']);
         echo "<tr>
           <td>$fname</td>
           <td>$lname</td>
           <td>$email</td>
           <td>$contact</td>
-          <td>$password</td>
         </tr>";
     
 	echo "</tbody></table><center><a href='admin-panel1.php' class='btn btn-light'>Back to dashboard</a></div></center></div></div></div>";

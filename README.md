@@ -1,6 +1,6 @@
 # MED-e Web Booking System
 
-MED-e is a role-based healthcare appointment platform built with PHP and MySQL. It gives patients, doctors, and administrators focused workspaces for managing appointments and prescriptions through a responsive, premium healthcare interface.
+MED-e is a role-based healthcare appointment platform built with PHP and MySQL. It gives patients, doctors, and administrators focused workspaces for managing appointments and prescriptions through a responsive healthcare interface.
 
 > **Portfolio notice:** MED-e is an educational localhost project. It has not been security-hardened for production use and must not be used with real patient or clinical data.
 
@@ -8,7 +8,7 @@ MED-e is a role-based healthcare appointment platform built with PHP and MySQL. 
 
 ### Patients
 
-- Create an account and sign in securely through a session-based flow
+- Create an account and sign in through a session-based flow
 - Browse doctors and book an available appointment
 - Review appointment history and cancellation status
 - View prescriptions issued by doctors
@@ -91,7 +91,9 @@ The current code expects XAMPP's default local MySQL connection: host `localhost
 
 - Real database exports, login-detail notes, environment files, and local configuration files are excluded by `.gitignore`.
 - The included schema contains no account credentials or patient information.
-- The legacy application stores passwords as plaintext and uses direct SQL queries. Before any production use, add password hashing, prepared statements, CSRF protection, stronger authorization checks, and secure secret management.
+- User-controlled database operations use prepared statements, authenticated dashboards enforce role checks, login regenerates the session ID, and database output is escaped in the main data views.
+- The legacy database still stores passwords as plaintext to remain compatible with existing accounts. Migrating to `password_hash()` requires widening the password columns and converting existing credentials.
+- CSRF tokens, production secret management, rate limiting, and comprehensive security testing are still required before deployment beyond a local educational environment.
 - Use only fictional test data while developing this project.
 
 ## License

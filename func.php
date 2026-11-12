@@ -1,14 +1,19 @@
 <?php
-session_start();
+require_once __DIR__ . '/auth.php';
+med_e_start_session();
 $con=mysqli_connect("localhost","root","","hospitalms");
 if(isset($_POST['patsub'])){
 	$email=$_POST['email'];
 	$password=$_POST['password2'];
-	$query="select * from patreg where email='$email' and password='$password';";
-	$result=mysqli_query($con,$query);
+	$stmt=mysqli_prepare($con,"select * from patreg where email=? and password=?");
+	mysqli_stmt_bind_param($stmt,"ss",$email,$password);
+	mysqli_stmt_execute($stmt);
+	$result=mysqli_stmt_get_result($stmt);
 	if(mysqli_num_rows($result)==1)
 	{
+		session_regenerate_id(true);
 		while($row=mysqli_fetch_array($result,MYSQLI_ASSOC)){
+      $_SESSION['role'] = 'patient';
       $_SESSION['pid'] = $row['pid'];
       $_SESSION['username'] = $row['fname']." ".$row['lname'];
       $_SESSION['fname'] = $row['fname'];
@@ -18,6 +23,7 @@ if(isset($_POST['patsub'])){
       $_SESSION['email'] = $row['email'];
     }
 		header("Location:admin-panel.php");
+		exit;
 	}
   else {
     echo("<script>alert('Invalid Username or Password. Try Again!');
@@ -30,8 +36,9 @@ if(isset($_POST['update_data']))
 {
 	$contact=$_POST['contact'];
 	$status=$_POST['status'];
-	$query="update appointmenttb set payment='$status' where contact='$contact';";
-	$result=mysqli_query($con,$query);
+	$stmt=mysqli_prepare($con,"update appointmenttb set payment=? where contact=?");
+	mysqli_stmt_bind_param($stmt,"ss",$status,$contact);
+	$result=mysqli_stmt_execute($stmt);
 	if($result)
 		header("Location:updated.php");
 }
@@ -52,15 +59,16 @@ if(isset($_POST['update_data']))
 // 	}
 // }
 
-if(isset($_POST['doc_sub']))
+if(isset($_POST['doc_sub']) && ($_SESSION['role'] ?? '') === 'admin')
 {
   $doctorname=$_POST['doctorname'];
 	$doctor=$_POST['doctor'];
   $dpassword=$_POST['dpassword'];
   $demail=$_POST['demail'];
   $docFees=$_POST['docFees'];
-	$query="insert into doctb(doctorname,username,password,email,docFees)values('$doctorname','$doctor','$dpassword','$demail','$docFees')";
-	$result=mysqli_query($con,$query);
+	$stmt=mysqli_prepare($con,"insert into doctb(doctorname,username,password,email,docFees) values(?,?,?,?,?)");
+	mysqli_stmt_bind_param($stmt,"ssssi",$doctorname,$doctor,$dpassword,$demail,$docFees);
+	$result=mysqli_stmt_execute($stmt);
 	if($result)
 		header("Location:adddoc.php");
 }

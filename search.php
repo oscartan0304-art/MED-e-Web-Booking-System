@@ -1,11 +1,14 @@
 <?php
-session_start();
+require_once __DIR__ . '/auth.php';
+med_e_require_role('doctor');
 $con=mysqli_connect("localhost","root","","hospitalms");
 if(isset($_POST['search_submit'])){
   $contact=$_POST['contact'];
   $docname = $_SESSION['dname'];
- $query="select * from appointmenttb where contact='$contact' and doctor='$docname';";
- $result=mysqli_query($con,$query);
+ $stmt=mysqli_prepare($con,"select * from appointmenttb where contact=? and doctor=?");
+ mysqli_stmt_bind_param($stmt,"ss",$contact,$docname);
+ mysqli_stmt_execute($stmt);
+ $result=mysqli_stmt_get_result($stmt);
  echo '<!DOCTYPE html>
 <html lang="en">
   <head>
@@ -33,12 +36,12 @@ if(isset($_POST['search_submit'])){
   <tbody>
   ';
   while($row=mysqli_fetch_array($result)){
-    $fname=$row['fname'];
-    $lname=$row['lname'];
-    $email=$row['email'];
-    $contact=$row['contact'];
-    $appdate=$row['appdate'];
-    $apptime=$row['apptime'];
+    $fname=med_e_escape($row['fname']);
+    $lname=med_e_escape($row['lname']);
+    $email=med_e_escape($row['email']);
+    $contact=med_e_escape($row['contact']);
+    $appdate=med_e_escape($row['appdate']);
+    $apptime=med_e_escape($row['apptime']);
     echo '<tr>
       <td>'.$fname.' '.$lname.'</td>
       <td>'.$email.'</td>

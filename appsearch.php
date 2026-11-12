@@ -1,3 +1,7 @@
+<?php
+require_once __DIR__ . '/auth.php';
+med_e_require_role('admin');
+?>
 <!DOCTYPE html>
  <?php #include("func.php");?>
 <html>
@@ -14,10 +18,12 @@ include("newfunc.php");
 if(isset($_POST['app_search_submit']))
 {
 	$contact=$_POST['app_contact'];
-	$query = "select * from appointmenttb where contact= '$contact';";
-  $result = mysqli_query($con,$query);
+	$stmt = mysqli_prepare($con,"select * from appointmenttb where contact=?");
+  mysqli_stmt_bind_param($stmt,"s",$contact);
+  mysqli_stmt_execute($stmt);
+  $result = mysqli_stmt_get_result($stmt);
   $row=mysqli_fetch_array($result);
-  if($row['fname']=="" & $row['lname']=="" & $row['email']=="" & $row['contact']=="" & $row['doctor']=="" & $row['docFees']=="" & $row['appdate']=="" & $row['apptime']==""){
+  if(!$row){
     echo "<script> alert('No entries found! Please enter valid details'); 
           window.location.href = 'admin-panel1.php#list-app';</script>";
   }
@@ -42,14 +48,14 @@ if(isset($_POST['app_search_submit']))
     <tbody>";
   
     
-          $fname = $row['fname'];
-          $lname = $row['lname'];
-          $email = $row['email'];
-          $contact = $row['contact'];
-          $doctor = $row['doctor'];
-          $docFees= $row['docFees'];
-          $appdate= $row['appdate'];
-          $apptime = $row['apptime'];
+          $fname = med_e_escape($row['fname']);
+          $lname = med_e_escape($row['lname']);
+          $email = med_e_escape($row['email']);
+          $contact = med_e_escape($row['contact']);
+          $doctor = med_e_escape($row['doctor']);
+          $docFees= med_e_escape($row['docFees']);
+          $appdate= med_e_escape($row['appdate']);
+          $apptime = med_e_escape($row['apptime']);
           if(($row['userStatus']==1) && ($row['doctorStatus']==1))  
                     {
                       $appstatus = "Active";

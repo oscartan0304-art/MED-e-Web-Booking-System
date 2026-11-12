@@ -1,3 +1,7 @@
+<?php
+require_once __DIR__ . '/auth.php';
+med_e_require_role('admin');
+?>
 <!DOCTYPE html>
  <?php #include("func.php");?>
 <html>
@@ -13,10 +17,12 @@ include("newfunc.php");
 if(isset($_POST['doctor_search_submit']))
 {
 	$contact=$_POST['doctor_contact'];
-  $query = "select * from doctb where email= '$contact'";
-  $result = mysqli_query($con,$query);
+  $stmt = mysqli_prepare($con,"select * from doctb where email=?");
+  mysqli_stmt_bind_param($stmt,"s",$contact);
+  mysqli_stmt_execute($stmt);
+  $result = mysqli_stmt_get_result($stmt);
   $row=mysqli_fetch_array($result);
-  if($row['username']=="" & $row['password']=="" & $row['email']=="" & $row['docFees']==""){
+  if(!$row){
     echo "<script> alert('No entries found!'); 
           window.location.href = 'admin-panel1.php#list-doc';</script>";
   }
@@ -28,7 +34,6 @@ if(isset($_POST['doctor_search_submit']))
   <thead>
     <tr>
       <th scope='col'>Username</th>
-      <th scope='col'>Password</th>
       <th scope='col'>Email</th>
       <th scope='col'>Consultancy Fees</th>
     </tr>
@@ -36,13 +41,11 @@ if(isset($_POST['doctor_search_submit']))
   <tbody>";
 
 	// while ($row=mysqli_fetch_array($result)){
-		    $username = $row['username'];
-        $password = $row['password'];
-        $email = $row['email'];
-        $docFees = $row['docFees'];
+		    $username = med_e_escape($row['username']);
+        $email = med_e_escape($row['email']);
+        $docFees = med_e_escape($row['docFees']);
         echo "<tr>
           <td>$username</td>
-          <td>$password</td>
           <td>$email</td>
           <td>$docFees</td>
         </tr>";

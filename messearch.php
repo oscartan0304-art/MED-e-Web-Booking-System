@@ -1,3 +1,7 @@
+<?php
+require_once __DIR__ . '/auth.php';
+med_e_require_role('admin');
+?>
 <!DOCTYPE html>
  <?php #include("func.php");?>
 <html>
@@ -12,10 +16,12 @@ include("newfunc.php");
 if(isset($_POST['mes_search_submit']))
 {
 	$contact=$_POST['mes_contact'];
-	$query = "select * from contact where contact= '$contact'";
-  $result = mysqli_query($con,$query);
+	$stmt = mysqli_prepare($con,"select * from contact where contact=?");
+  mysqli_stmt_bind_param($stmt,"s",$contact);
+  mysqli_stmt_execute($stmt);
+  $result = mysqli_stmt_get_result($stmt);
   $row=mysqli_fetch_array($result);
-  if($row['name']=="" & $row['email']=="" & $row['contact']=="" & $row['message']==""){
+  if(!$row){
     echo "<script> alert('No entries found! Please enter valid details'); 
           window.location.href = 'admin-panel1.php#list-mes';</script>";
   } 
@@ -35,10 +41,10 @@ if(isset($_POST['mes_search_submit']))
     <tbody>";
   
     
-          $name = $row['name'];
-          $email = $row['email'];
-          $contact = $row['contact'];
-          $message = $row['message'];
+          $name = med_e_escape($row['name']);
+          $email = med_e_escape($row['email']);
+          $contact = med_e_escape($row['contact']);
+          $message = med_e_escape($row['message']);
           echo "<tr>
             <td>$name</td>
             <td>$email</td>

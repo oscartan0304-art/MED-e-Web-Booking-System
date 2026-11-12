@@ -1,5 +1,6 @@
 <?php
-// session_start();
+require_once __DIR__ . '/auth.php';
+med_e_start_session();
 $con=mysqli_connect("localhost","root","","hospitalms");
 // if(isset($_POST['submit'])){
 //  $username=$_POST['username'];
@@ -15,12 +16,13 @@ $con=mysqli_connect("localhost","root","","hospitalms");
 //  else
 //   header("Location:error.php");
 // }
-if(isset($_POST['update_data']))
+if(isset($_POST['update_data']) && isset($_SESSION['role']))
 {
  $contact=$_POST['contact'];
  $status=$_POST['status'];
- $query="update appointmenttb set payment='$status' where contact='$contact';";
- $result=mysqli_query($con,$query);
+ $stmt=mysqli_prepare($con,"update appointmenttb set payment=? where contact=?");
+ mysqli_stmt_bind_param($stmt,"ss",$status,$contact);
+ $result=mysqli_stmt_execute($stmt);
  if($result)
   header("Location:updated.php");
 }
@@ -45,7 +47,7 @@ function display_specs() {
   $result=mysqli_query($con,$query);
   while($row=mysqli_fetch_array($result))
   {
-    $spec=$row['spec'];
+    $spec=med_e_escape($row['spec']);
     echo '<option data-value="'.$spec.'">'.$spec.'</option>';
   }
 }
@@ -57,9 +59,9 @@ function display_docs()
  $result = mysqli_query($con,$query);
  while( $row = mysqli_fetch_array($result) )
  {
-  $username = $row['username'];
-  $price = $row['docFees'];
-  $spec = $row['spec'];
+  $username = med_e_escape($row['username']);
+  $price = med_e_escape($row['docFees']);
+  $spec = med_e_escape($row['spec']);
   echo '<option value="' .$username. '" data-value="'.$price.'" data-spec="'.$spec.'">'.$username.'</option>';
  }
 }
@@ -77,11 +79,12 @@ function display_docs()
 // }
 
 
-if(isset($_POST['doc_sub']))
+if(isset($_POST['doc_sub']) && ($_SESSION['role'] ?? '') === 'admin')
 {
  $username=$_POST['username'];
- $query="insert into doctb(username)values('$username')";
- $result=mysqli_query($con,$query);
+ $stmt=mysqli_prepare($con,"insert into doctb(username) values(?)");
+ mysqli_stmt_bind_param($stmt,"s",$username);
+ $result=mysqli_stmt_execute($stmt);
  if($result)
   header("Location:adddoc.php");
 }

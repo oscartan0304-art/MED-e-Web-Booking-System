@@ -1,5 +1,6 @@
 <?php
-session_start();
+require_once __DIR__ . '/auth.php';
+med_e_start_session();
 $con=mysqli_connect("localhost","root","","hospitalms");
 if(isset($_POST['patsub1'])){
 	$fname=$_POST['fname'];
@@ -10,9 +11,12 @@ if(isset($_POST['patsub1'])){
 	$password=$_POST['password'];
   $cpassword=$_POST['cpassword'];
   if($password==$cpassword){
-  	$query="insert into patreg(fname,lname,gender,email,contact,password,cpassword) values ('$fname','$lname','$gender','$email','$contact','$password','$cpassword');";
-    $result=mysqli_query($con,$query);
+  	$stmt=mysqli_prepare($con,"insert into patreg(fname,lname,gender,email,contact,password,cpassword) values (?,?,?,?,?,?,?)");
+    mysqli_stmt_bind_param($stmt,"sssssss",$fname,$lname,$gender,$email,$contact,$password,$cpassword);
+    $result=mysqli_stmt_execute($stmt);
     if($result){
+        session_regenerate_id(true);
+        $_SESSION['role'] = 'patient';
         $_SESSION['pid'] = mysqli_insert_id($con);
         $_SESSION['username'] = $_POST['fname']." ".$_POST['lname'];
         $_SESSION['fname'] = $_POST['fname'];
@@ -34,8 +38,9 @@ if(isset($_POST['update_data']))
 {
 	$contact=$_POST['contact'];
 	$status=$_POST['status'];
-	$query="update appointmenttb set payment='$status' where contact='$contact';";
-	$result=mysqli_query($con,$query);
+	$stmt=mysqli_prepare($con,"update appointmenttb set payment=? where contact=?");
+	mysqli_stmt_bind_param($stmt,"ss",$status,$contact);
+	$result=mysqli_stmt_execute($stmt);
 	if($result)
 		header("Location:updated.php");
 }
@@ -56,11 +61,12 @@ if(isset($_POST['update_data']))
 // 	}
 // }
 
-if(isset($_POST['doc_sub']))
+if(isset($_POST['doc_sub']) && ($_SESSION['role'] ?? '') === 'admin')
 {
 	$name=$_POST['name'];
-	$query="insert into doctb(name)values('$name')";
-	$result=mysqli_query($con,$query);
+	$stmt=mysqli_prepare($con,"insert into doctb(name) values(?)");
+	mysqli_stmt_bind_param($stmt,"s",$name);
+	$result=mysqli_stmt_execute($stmt);
 	if($result)
 		header("Location:adddoc.php");
 }

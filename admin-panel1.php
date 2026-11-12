@@ -1,3 +1,7 @@
+<?php
+require_once __DIR__ . '/auth.php';
+med_e_require_role('admin');
+?>
 <!DOCTYPE html>
 <?php 
 $con=mysqli_connect("localhost","root","","hospitalms");
@@ -12,8 +16,9 @@ if(isset($_POST['docsub']))
   $demail=$_POST['demail'];
   $spec=$_POST['special'];
   $docFees=$_POST['docFees'];
-  $query="insert into doctb(doctorname,username,password,email,spec,docFees)values('$doctorname','$doctor','$dpassword','$demail','$spec','$docFees')";
-  $result=mysqli_query($con,$query);
+  $stmt=mysqli_prepare($con,"insert into doctb(doctorname,username,password,email,spec,docFees) values(?,?,?,?,?,?)");
+  mysqli_stmt_bind_param($stmt,"sssssi",$doctorname,$doctor,$dpassword,$demail,$spec,$docFees);
+  $result=mysqli_stmt_execute($stmt);
   if($result)
     {
       echo "<script>alert('Doctor added successfully!');</script>";
@@ -24,8 +29,9 @@ if(isset($_POST['docsub']))
 if(isset($_POST['docsub1']))
 {
   $demail=$_POST['demail'];
-  $query="delete from doctb where email='$demail';";
-  $result=mysqli_query($con,$query);
+  $stmt=mysqli_prepare($con,"delete from doctb where email=?");
+  mysqli_stmt_bind_param($stmt,"s",$demail);
+  $result=mysqli_stmt_execute($stmt);
   if($result)
     {
       echo "<script>alert('Doctor removed successfully!');</script>";
@@ -285,12 +291,11 @@ if(isset($_POST['docsub1']))
                     $result = mysqli_query($con,$query);
                     $cnt=1;
                     while ($row = mysqli_fetch_array($result)){
-                      $doctorname = $row['doctorname'];
-                      $spec = $row['spec'];
-                      $email = $row['email'];
-                      $username = $row['username'];
-                      $password = $row['password'];
-                      $docFees = $row['docFees'];
+                      $doctorname = med_e_escape($row['doctorname']);
+                      $spec = med_e_escape($row['spec']);
+                      $email = med_e_escape($row['email']);
+                      $username = med_e_escape($row['username']);
+                      $docFees = med_e_escape($row['docFees']);
                       
                       echo "<tr>
                         <td>$cnt</td>
@@ -338,11 +343,11 @@ if(isset($_POST['docsub1']))
                     $cnt=1;
                     while ($row = mysqli_fetch_array($result)){
                       $pid = $row['pid'];
-                      $fname = $row['fname'];
-                      $lname = $row['lname'];
-                      $gender = $row['gender'];
-                      $email = $row['email'];
-                      $contact = $row['contact'];
+                      $fname = med_e_escape($row['fname']);
+                      $lname = med_e_escape($row['lname']);
+                      $gender = med_e_escape($row['gender']);
+                      $email = med_e_escape($row['email']);
+                      $contact = med_e_escape($row['contact']);
                       
                       echo "<tr>
                         <td>$cnt</td>
@@ -389,16 +394,16 @@ if(isset($_POST['docsub1']))
                     $result = mysqli_query($con,$query);
                     $cnt=1;
                     while ($row = mysqli_fetch_array($result)){
-                      $doctor = $row['doctor'];
+                      $doctor = med_e_escape($row['doctor']);
                       $pid = $row['pid'];
                       $ID = $row['ID'];
-                      $fname = $row['fname'];
-                      $lname = $row['lname'];
-                      $appdate = $row['appdate'];
-                      $apptime = $row['apptime'];
-                      $disease = $row['disease'];
-                      $allergy = $row['allergy'];
-                      $pres = $row['prescription'];
+                      $fname = med_e_escape($row['fname']);
+                      $lname = med_e_escape($row['lname']);
+                      $appdate = med_e_escape($row['appdate']);
+                      $apptime = med_e_escape($row['apptime']);
+                      $disease = med_e_escape($row['disease']);
+                      $allergy = med_e_escape($row['allergy']);
+                      $pres = med_e_escape($row['prescription']);
 
                       
                       echo "<tr>
@@ -462,14 +467,14 @@ if(isset($_POST['docsub1']))
                   ?>
                       <tr>
                         <td><?php echo $cnt;?></td>
-                        <td><?php echo $row['fname'];?> <?php echo $row['lname'];?></td>
-                        <td><?php echo $row['gender'];?></td>
-                        <td><?php echo $row['email'];?></td>
-                        <td><?php echo $row['contact'];?></td>
-                        <td><?php echo $row['doctor'];?></td>
-                        <td><?php echo '$'.$row['docFees'];?></td>
-                        <td><?php echo $row['appdate'];?></td>
-                        <td><?php echo $row['apptime'];?></td>
+                        <td><?php echo med_e_escape($row['fname']);?> <?php echo med_e_escape($row['lname']);?></td>
+                        <td><?php echo med_e_escape($row['gender']);?></td>
+                        <td><?php echo med_e_escape($row['email']);?></td>
+                        <td><?php echo med_e_escape($row['contact']);?></td>
+                        <td><?php echo med_e_escape($row['doctor']);?></td>
+                        <td><?php echo '$'.med_e_escape($row['docFees']);?></td>
+                        <td><?php echo med_e_escape($row['appdate']);?></td>
+                        <td><?php echo med_e_escape($row['apptime']);?></td>
                         <td>
                     <?php if(($row['userStatus']==1) && ($row['doctorStatus']==1))  
                     {
@@ -582,10 +587,10 @@ if(isset($_POST['docsub1']))
                   ?>
                       <tr>
                         <td><?php echo $cnt;?></td>
-                        <td><?php echo $row['name'];?></td>
-                        <td><?php echo $row['email'];?></td>
-                        <td><?php echo $row['contact'];?></td>
-                        <td><?php echo $row['message'];?></td>
+                        <td><?php echo med_e_escape($row['name']);?></td>
+                        <td><?php echo med_e_escape($row['email']);?></td>
+                        <td><?php echo med_e_escape($row['contact']);?></td>
+                        <td><?php echo med_e_escape($row['message']);?></td>
                       </tr>
                     <?php $cnt++; } ?>
                 </tbody>

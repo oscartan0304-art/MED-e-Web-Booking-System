@@ -1,19 +1,25 @@
 <?php
-session_start();
+require_once __DIR__ . '/auth.php';
+med_e_start_session();
 $con=mysqli_connect("localhost","root","","hospitalms");
 if(isset($_POST['docsub1'])){
 	$dname=$_POST['username3'];
 	$dpass=$_POST['password3'];
-	$query="select * from doctb where username='$dname' and password='$dpass';";
-	$result=mysqli_query($con,$query);
+	$stmt=mysqli_prepare($con,"select * from doctb where username=? and password=?");
+	mysqli_stmt_bind_param($stmt,"ss",$dname,$dpass);
+	mysqli_stmt_execute($stmt);
+	$result=mysqli_stmt_get_result($stmt);
 	if(mysqli_num_rows($result)==1)
 	{
+		session_regenerate_id(true);
     while($row=mysqli_fetch_array($result,MYSQLI_ASSOC)){
-    
+
+		      $_SESSION['role']='doctor';
 		      $_SESSION['dname']=$row['username'];
       
     }
 		header("Location:doctor-panel.php");
+		exit;
 	}
 	else{
     // header("Location:error2.php");
@@ -43,7 +49,7 @@ function display_docs()
 	$result=mysqli_query($con,$query);
 	while($row=mysqli_fetch_array($result))
 	{
-		$name=$row['name'];
+		$name=med_e_escape($row['name']);
 		# echo'<option value="" disabled selected>Select Doctor</option>';
 		echo '<option value="'.$name.'">'.$name.'</option>';
 	}
